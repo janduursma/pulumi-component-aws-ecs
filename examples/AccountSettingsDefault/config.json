@@ -1,0 +1,12 @@
+{
+  "accountSettingsDefault": [
+    {
+      "name": "containerInsights",
+      "value": "enabled"
+    },
+    {
+      "name": "containerInstanceLongArnFormat",
+      "value": "enabled"
+    }
+  ]
+}

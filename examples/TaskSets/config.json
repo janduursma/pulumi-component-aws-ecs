@@ -1,0 +1,50 @@
+{
+  "taskSets": [
+    {
+      "name": "my-task-set-1",
+      "service": "my-service",
+      "cluster": "my-cluster",
+      "taskDefinition": "my-task-definition",
+      "capacityProviderStrategies": [
+        {
+          "base": 1,
+          "capacityProvider": "provider1",
+          "weight": 1
+        }
+      ],
+      "externalId": "external-id-1",
+      "forceDelete": false,
+      "launchType": "FARGATE",
+      "loadBalancers": [
+        {
+          "containerName": "my-container",
+          "containerPort": 80,
+          "loadBalancerName": "my-load-balancer",
+          "targetGroupArn": "arn:aws:elasticloadbalancing:us-west-2:123456789012:targetgroup/my-target-group"
+        }
+      ],
+      "networkConfiguration": {
+        "subnets": ["subnet-12345678", "subnet-87654321"],
+        "assignPublicIp": true,
+        "securityGroups": ["sg-12345678", "sg-87654321"]
+      },
+      "platformVersion": "1.4.0",
+      "scale": {
+        "unit": "PERCENT",
+        "value": 100
+      },
+      "serviceRegistries": {
+        "registryArn": "arn:aws:servicediscovery:us-west-2:123456789012:namespace/ns-abcdef123456/operation/ops-abcdef123456",
+        "containerName": "my-container",
+        "containerPort": 80,
+        "port": 8080
+      },
+      "tags": {
+        "environment": "production",
+        "owner": "myteam"
+      },
+      "waitUntilStable": true,
+      "waitUntilStableTimeout": "10m"
+    }
+  ]
+}
