@@ -7,7 +7,6 @@ on:
       - main
     paths:
       - '**/*.go'
-      - '.github/workflows/release.yaml'
 
 jobs:
   release:
@@ -43,6 +42,8 @@ jobs:
 
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Cache Go Modules
         uses: actions/cache@v4
@@ -55,7 +56,11 @@ jobs:
       - name: GoReleaser
         uses: goreleaser/goreleaser-action@v5
         with:
+          distribution: goreleaser
           version: latest
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
   build-docs:
     name: Build documentation with doc2go
