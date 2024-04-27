@@ -53,6 +53,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
+      - name: Fetch new tag
+        run: git fetch --tags
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+
       - name: GoReleaser
         uses: goreleaser/goreleaser-action@v5
         with:
