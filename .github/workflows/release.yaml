@@ -29,47 +29,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
-  goreleaser:
-    name: Push artifacts to release with goreleaser
-    needs: release
-    runs-on: ubuntu-latest
-    steps:
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: 1.22
-          cache: true
-
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-
-      - name: Cache Go Modules
-        uses: actions/cache@v4
-        with:
-          path: ~/go/pkg/mod
-          key: "${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}"
-          restore-keys: |
-            ${{ runner.os }}-go-
-
-      - name: Fetch new tag
-        run: git fetch --tags
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-
-      - name: GoReleaser
-        uses: goreleaser/goreleaser-action@v5
-        with:
-          distribution: goreleaser
-          version: latest
-          args: release --clean
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-
   build-docs:
     name: Build documentation with doc2go
-    needs: goreleaser
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
