@@ -1,0 +1,18 @@
+{
+  "clusterCapacityProvider": {
+    "clusterName": "my-cluster",
+    "capacityProviders": ["provider1", "provider2"],
+    "defaultCapacityProviderStrategies": [
+      {
+        "base": 1,
+        "capacityProvider": "provider1",
+        "weight": 1
+      },
+      {
+        "base": 0,
+        "capacityProvider": "provider2",
+        "weight": 2
+      }
+    ]
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "cluster": {
+    "name": "my-cluster",
+    "configuration": {
+      "executeCommand": {
+        "kmsKeyId": "my-kms-key-id",
+        "logging": "ENABLED"
+      },
+      "logConfiguration": {
+        "cloudWatchEncryptionEnabled": true,
+        "cloudWatchLogGroupName": "/ecs/my-cluster-logs",
+        "s3BucketEncryptionEnabled": true,
+        "s3BucketName": "my-s3-bucket",
+        "s3KeyPrefix": "logs/"
+      }
+    },
+    "settings": [
+      {
+        "name": "containerInsights",
+        "value": "enabled"
+      }
+    ],
+    "serviceConnectNamespace": "default",
+    "tags": {
+      "environment": "production",
+      "owner": "myteam"
+    }
+  }
+}
