@@ -3,7 +3,7 @@ module github.com/janduursma/pulumi-component-aws-ecs
 go 1.22.2
 
 require (
-	github.com/pulumi/pulumi-aws/sdk/v6 v6.32.0
+	github.com/pulumi/pulumi-aws/sdk/v6 v6.33.1
 	github.com/pulumi/pulumi/sdk/v3 v3.113.3
 	go.uber.org/zap v1.27.0
 )
