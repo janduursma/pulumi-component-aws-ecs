@@ -16,7 +16,9 @@ For more information, consult the package README or the /examples directory.
 package ecs
 
 import (
+	"encoding/json"
 	"fmt"
+
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/ecs"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
@@ -189,13 +191,13 @@ type serviceOutput struct {
 
 // TaskDefinitionConfig defines arguments for creating an AWS ECS task definition.
 type TaskDefinitionConfig struct {
-	Name                  string `json:"name"`
-	ContainerDefinitions  string `json:"containerDefinitions"`
-	NetworkMode           string `json:"networkMode"`
-	CPU                   string `json:"cpu"`
-	EphemeralStorage      int    `json:"ephemeralStorage"`
-	ExecutionRoleArn      string `json:"executionRoleArn"`
-	IpcMode               string `json:"ipcMode"`
+	Name                  string                   `json:"name"`
+	ContainerDefinitions  []map[string]interface{} `json:"containerDefinitions"`
+	NetworkMode           string                   `json:"networkMode"`
+	CPU                   string                   `json:"cpu"`
+	EphemeralStorage      int                      `json:"ephemeralStorage"`
+	ExecutionRoleArn      string                   `json:"executionRoleArn"`
+	IpcMode               string                   `json:"ipcMode"`
 	InferenceAccelerators []struct {
 		DeviceName string `json:"deviceName"`
 		DeviceType string `json:"deviceType"`
@@ -444,6 +446,15 @@ func NewService(ctx *pulumi.Context, config ServiceConfig, opts ...pulumi.Resour
 		return nil, fmt.Errorf("failed to register component resource: %v", err)
 	}
 
+	var alarms *ecs.ServiceAlarmsArgs
+	if len(config.Alarms.AlarmNames) != 0 {
+		alarms = &ecs.ServiceAlarmsArgs{
+			AlarmNames: pulumi.ToStringArray(config.Alarms.AlarmNames),
+			Enable:     pulumi.Bool(config.Alarms.Enable),
+			Rollback:   pulumi.Bool(config.Alarms.Rollback),
+		}
+	}
+
 	var capacityProviderStrategies ecs.ServiceCapacityProviderStrategyArray
 	for _, capacityProviderStrategy := range config.CapacityProviderStrategies {
 		capacityProviderStrategies = append(capacityProviderStrategies, &ecs.ServiceCapacityProviderStrategyArgs{
@@ -479,12 +490,31 @@ func NewService(ctx *pulumi.Context, config ServiceConfig, opts ...pulumi.Resour
 		})
 	}
 
+	var serviceRegistries *ecs.ServiceServiceRegistriesArgs
+	if config.ServiceRegistry.RegistryArn != "" {
+		serviceRegistries = &ecs.ServiceServiceRegistriesArgs{
+			ContainerName: pulumi.String(config.ServiceRegistry.ContainerName),
+			ContainerPort: pulumi.Int(config.ServiceRegistry.ContainerPort),
+			Port:          pulumi.Int(config.ServiceRegistry.Port),
+			RegistryArn:   pulumi.String(config.ServiceRegistry.RegistryArn),
+		}
+	}
+
+	var serviceConnectServicesLogConfiguration *ecs.ServiceServiceConnectConfigurationLogConfigurationArgs
 	var serviceConnectLogsSecretOptions ecs.ServiceServiceConnectConfigurationLogConfigurationSecretOptionArray
-	for _, serviceConnectLogsSecretOption := range config.ServiceConnectConfiguration.LogConfiguration.SecretOptions {
-		serviceConnectLogsSecretOptions = append(serviceConnectLogsSecretOptions, &ecs.ServiceServiceConnectConfigurationLogConfigurationSecretOptionArgs{
-			Name:      pulumi.String(serviceConnectLogsSecretOption.Name),
-			ValueFrom: pulumi.String(serviceConnectLogsSecretOption.ValueFrom),
-		})
+	if config.ServiceConnectConfiguration.LogConfiguration.LogDriver != "" {
+		for _, serviceConnectLogsSecretOption := range config.ServiceConnectConfiguration.LogConfiguration.SecretOptions {
+			serviceConnectLogsSecretOptions = append(serviceConnectLogsSecretOptions, &ecs.ServiceServiceConnectConfigurationLogConfigurationSecretOptionArgs{
+				Name:      pulumi.String(serviceConnectLogsSecretOption.Name),
+				ValueFrom: pulumi.String(serviceConnectLogsSecretOption.ValueFrom),
+			})
+		}
+
+		serviceConnectServicesLogConfiguration = &ecs.ServiceServiceConnectConfigurationLogConfigurationArgs{
+			LogDriver:     pulumi.String(config.ServiceConnectConfiguration.LogConfiguration.LogDriver),
+			Options:       pulumi.ToStringMap(config.ServiceConnectConfiguration.LogConfiguration.Options),
+			SecretOptions: serviceConnectLogsSecretOptions,
+		}
 	}
 
 	var serviceConnectServicesClientAliases ecs.ServiceServiceConnectConfigurationServiceClientAliasArray
@@ -519,15 +549,11 @@ func NewService(ctx *pulumi.Context, config ServiceConfig, opts ...pulumi.Resour
 	}
 
 	service, err := ecs.NewService(ctx, "service", &ecs.ServiceArgs{
-		Name:           pulumi.String(config.Name),
-		Cluster:        pulumi.String(config.ClusterArn),
-		TaskDefinition: pulumi.String(config.TaskDefinition),
-		DesiredCount:   pulumi.Int(config.DesiredCount),
-		Alarms: &ecs.ServiceAlarmsArgs{
-			AlarmNames: pulumi.ToStringArray(config.Alarms.AlarmNames),
-			Enable:     pulumi.Bool(config.Alarms.Enable),
-			Rollback:   pulumi.Bool(config.Alarms.Rollback),
-		},
+		Name:                       pulumi.String(config.Name),
+		Cluster:                    pulumi.String(config.ClusterArn),
+		TaskDefinition:             pulumi.String(config.TaskDefinition),
+		DesiredCount:               pulumi.Int(config.DesiredCount),
+		Alarms:                     alarms,
 		CapacityProviderStrategies: capacityProviderStrategies,
 		DeploymentCircuitBreaker: &ecs.ServiceDeploymentCircuitBreakerArgs{
 			Enable:   pulumi.Bool(config.DeploymentCircuitBreaker.Enable),
@@ -556,21 +582,12 @@ func NewService(ctx *pulumi.Context, config ServiceConfig, opts ...pulumi.Resour
 		PropagateTags:              pulumi.String(config.PropagateTags),
 		SchedulingStrategy:         pulumi.String(config.SchedulingStrategy),
 		ServiceConnectConfiguration: &ecs.ServiceServiceConnectConfigurationArgs{
-			Enabled: pulumi.Bool(config.ServiceConnectConfiguration.Enabled),
-			LogConfiguration: &ecs.ServiceServiceConnectConfigurationLogConfigurationArgs{
-				LogDriver:     pulumi.String(config.ServiceConnectConfiguration.LogConfiguration.LogDriver),
-				Options:       pulumi.ToStringMap(config.ServiceConnectConfiguration.LogConfiguration.Options),
-				SecretOptions: serviceConnectLogsSecretOptions,
-			},
-			Namespace: pulumi.String(config.ServiceConnectConfiguration.Namespace),
-			Services:  serviceConnectServices,
+			Enabled:          pulumi.Bool(config.ServiceConnectConfiguration.Enabled),
+			LogConfiguration: serviceConnectServicesLogConfiguration,
+			Namespace:        pulumi.String(config.ServiceConnectConfiguration.Namespace),
+			Services:         serviceConnectServices,
 		},
-		ServiceRegistries: &ecs.ServiceServiceRegistriesArgs{
-			ContainerName: pulumi.String(config.ServiceRegistry.ContainerName),
-			ContainerPort: pulumi.Int(config.ServiceRegistry.ContainerPort),
-			Port:          pulumi.Int(config.ServiceRegistry.Port),
-			RegistryArn:   pulumi.String(config.ServiceRegistry.RegistryArn),
-		},
+		ServiceRegistries:  serviceRegistries,
 		Tags:               pulumi.ToStringMap(config.Tags),
 		Triggers:           pulumi.ToStringMap(config.Triggers),
 		WaitForSteadyState: pulumi.Bool(config.WaitForSteadyState),
@@ -592,12 +609,31 @@ func NewTaskDefinition(ctx *pulumi.Context, config TaskDefinitionConfig, opts ..
 		return nil, fmt.Errorf("failed to register component resource: %v", err)
 	}
 
+	containerDefinitions, err := json.Marshal(config.ContainerDefinitions)
+	if err != nil {
+		return nil, fmt.Errorf("could not marshal container definitions json: %v", err)
+	}
+
 	var inferenceAccelerators ecs.TaskDefinitionInferenceAcceleratorArray
 	for _, inferenceAccelerator := range config.InferenceAccelerators {
 		inferenceAccelerators = append(inferenceAccelerators, &ecs.TaskDefinitionInferenceAcceleratorArgs{
 			DeviceName: pulumi.String(inferenceAccelerator.DeviceName),
 			DeviceType: pulumi.String(inferenceAccelerator.DeviceType),
 		})
+	}
+
+	var ipcMode pulumi.StringPtrInput
+	if config.IpcMode != "" {
+		ipcMode = pulumi.String(config.IpcMode)
+	}
+
+	var proxyConfiguration *ecs.TaskDefinitionProxyConfigurationArgs
+	if config.ProxyConfiguration.Type != "" {
+		proxyConfiguration = &ecs.TaskDefinitionProxyConfigurationArgs{
+			ContainerName: pulumi.String(config.ProxyConfiguration.ContainerName),
+			Properties:    pulumi.ToStringMap(config.ProxyConfiguration.Properties),
+			Type:          pulumi.String(config.ProxyConfiguration.Type),
+		}
 	}
 
 	var placementConstraints ecs.TaskDefinitionPlacementConstraintArray
@@ -610,16 +646,20 @@ func NewTaskDefinition(ctx *pulumi.Context, config TaskDefinitionConfig, opts ..
 
 	var volumes ecs.TaskDefinitionVolumeArray
 	for _, volume := range config.Volumes {
-		volumes = append(volumes, &ecs.TaskDefinitionVolumeArgs{
-			Name: pulumi.String(volume.Name),
-			DockerVolumeConfiguration: &ecs.TaskDefinitionVolumeDockerVolumeConfigurationArgs{
+		var dockerVolumeConfiguration *ecs.TaskDefinitionVolumeDockerVolumeConfigurationArgs
+		if volume.DockerVolumeConfiguration.Scope != "" {
+			dockerVolumeConfiguration = &ecs.TaskDefinitionVolumeDockerVolumeConfigurationArgs{
 				Autoprovision: pulumi.Bool(volume.DockerVolumeConfiguration.Autoprovision),
 				Driver:        pulumi.String(volume.DockerVolumeConfiguration.Driver),
 				DriverOpts:    pulumi.ToStringMap(volume.DockerVolumeConfiguration.DriverOpts),
 				Labels:        pulumi.ToStringMap(volume.DockerVolumeConfiguration.Labels),
 				Scope:         pulumi.String(volume.DockerVolumeConfiguration.Scope),
-			},
-			EfsVolumeConfiguration: &ecs.TaskDefinitionVolumeEfsVolumeConfigurationArgs{
+			}
+		}
+
+		var efsVolumeConfiguration *ecs.TaskDefinitionVolumeEfsVolumeConfigurationArgs
+		if volume.EfsVolumeConfiguration.FileSystemID != "" {
+			efsVolumeConfiguration = &ecs.TaskDefinitionVolumeEfsVolumeConfigurationArgs{
 				FileSystemId: pulumi.String(volume.EfsVolumeConfiguration.FileSystemID),
 				AuthorizationConfig: &ecs.TaskDefinitionVolumeEfsVolumeConfigurationAuthorizationConfigArgs{
 					AccessPointId: pulumi.String(volume.EfsVolumeConfiguration.AuthorizationConfig.AccessPointID),
@@ -628,38 +668,45 @@ func NewTaskDefinition(ctx *pulumi.Context, config TaskDefinitionConfig, opts ..
 				RootDirectory:         pulumi.String(volume.EfsVolumeConfiguration.RootDirectory),
 				TransitEncryption:     pulumi.String(volume.EfsVolumeConfiguration.TransitEncryption),
 				TransitEncryptionPort: pulumi.Int(volume.EfsVolumeConfiguration.TransitEncryptionPort),
-			},
-			FsxWindowsFileServerVolumeConfiguration: &ecs.TaskDefinitionVolumeFsxWindowsFileServerVolumeConfigurationArgs{
+			}
+		}
+
+		var fsxVolumeConfiguration *ecs.TaskDefinitionVolumeFsxWindowsFileServerVolumeConfigurationArgs
+		if volume.FsxWindowsFileServerVolumeConfiguration.FileSystemID != "" {
+			fsxVolumeConfiguration = &ecs.TaskDefinitionVolumeFsxWindowsFileServerVolumeConfigurationArgs{
 				AuthorizationConfig: &ecs.TaskDefinitionVolumeFsxWindowsFileServerVolumeConfigurationAuthorizationConfigArgs{
 					CredentialsParameter: pulumi.String(volume.FsxWindowsFileServerVolumeConfiguration.AuthorizationConfig.CredentialsParameter),
 					Domain:               pulumi.String(volume.FsxWindowsFileServerVolumeConfiguration.AuthorizationConfig.Domain),
 				},
 				FileSystemId:  pulumi.String(volume.FsxWindowsFileServerVolumeConfiguration.FileSystemID),
 				RootDirectory: pulumi.String(volume.FsxWindowsFileServerVolumeConfiguration.RootDirectory),
-			},
-			HostPath: pulumi.String(volume.HostPath),
+			}
+		}
+
+		volumes = append(volumes, &ecs.TaskDefinitionVolumeArgs{
+			Name:                                    pulumi.String(volume.Name),
+			DockerVolumeConfiguration:               dockerVolumeConfiguration,
+			EfsVolumeConfiguration:                  efsVolumeConfiguration,
+			FsxWindowsFileServerVolumeConfiguration: fsxVolumeConfiguration,
+			HostPath:                                pulumi.String(volume.HostPath),
 		})
 	}
 
 	taskDefinition, err := ecs.NewTaskDefinition(ctx, "taskDefinition", &ecs.TaskDefinitionArgs{
 		Family:               pulumi.String(config.Name),
-		ContainerDefinitions: pulumi.String(config.ContainerDefinitions),
+		ContainerDefinitions: pulumi.String(containerDefinitions),
 		NetworkMode:          pulumi.String(config.NetworkMode),
 		Cpu:                  pulumi.String(config.CPU),
 		EphemeralStorage: &ecs.TaskDefinitionEphemeralStorageArgs{
 			SizeInGib: pulumi.Int(config.EphemeralStorage),
 		},
-		ExecutionRoleArn:      pulumi.String(config.ExecutionRoleArn),
-		IpcMode:               pulumi.String(config.IpcMode),
-		InferenceAccelerators: inferenceAccelerators,
-		Memory:                pulumi.String(config.Memory),
-		PidMode:               pulumi.String(config.PidMode),
-		PlacementConstraints:  placementConstraints,
-		ProxyConfiguration: &ecs.TaskDefinitionProxyConfigurationArgs{
-			ContainerName: pulumi.String(config.ProxyConfiguration.ContainerName),
-			Properties:    pulumi.ToStringMap(config.ProxyConfiguration.Properties),
-			Type:          pulumi.String(config.ProxyConfiguration.Type),
-		},
+		ExecutionRoleArn:        pulumi.String(config.ExecutionRoleArn),
+		IpcMode:                 ipcMode,
+		InferenceAccelerators:   inferenceAccelerators,
+		Memory:                  pulumi.String(config.Memory),
+		PidMode:                 pulumi.String(config.PidMode),
+		PlacementConstraints:    placementConstraints,
+		ProxyConfiguration:      proxyConfiguration,
 		RequiresCompatibilities: pulumi.ToStringArray(config.RequiresCompatibilities),
 		RuntimePlatform: &ecs.TaskDefinitionRuntimePlatformArgs{
 			CpuArchitecture:       pulumi.String(config.RuntimePlatform.CPUArchitecture),
@@ -710,6 +757,21 @@ func NewTaskSets(ctx *pulumi.Context, taskSets []TaskSetConfig, opts ...pulumi.R
 			})
 		}
 
+		var serviceRegistries *ecs.TaskSetServiceRegistriesArgs
+		if taskSet.ServiceRegistries.RegistryArn != "" {
+			serviceRegistries = &ecs.TaskSetServiceRegistriesArgs{
+				ContainerName: pulumi.String(taskSet.ServiceRegistries.ContainerName),
+				ContainerPort: pulumi.Int(taskSet.ServiceRegistries.ContainerPort),
+				Port:          pulumi.Int(taskSet.ServiceRegistries.Port),
+				RegistryArn:   pulumi.String(taskSet.ServiceRegistries.RegistryArn),
+			}
+		}
+
+		var waitUntilStableTimeout pulumi.StringPtrInput
+		if taskSet.WaitUntilStableTimeout != "" {
+			waitUntilStableTimeout = pulumi.String(taskSet.WaitUntilStableTimeout)
+		}
+
 		output, err := ecs.NewTaskSet(ctx, fmt.Sprintf("taskSet-%d", i+1), &ecs.TaskSetArgs{
 			Service:                    pulumi.String(taskSet.Service),
 			Cluster:                    pulumi.String(taskSet.Cluster),
@@ -730,15 +792,10 @@ func NewTaskSets(ctx *pulumi.Context, taskSets []TaskSetConfig, opts ...pulumi.R
 				Value: pulumi.Float64(taskSet.Scale.Value),
 			},
 
-			ServiceRegistries: &ecs.TaskSetServiceRegistriesArgs{
-				RegistryArn:   pulumi.String(taskSet.ServiceRegistries.RegistryArn),
-				ContainerName: pulumi.String(taskSet.ServiceRegistries.ContainerName),
-				ContainerPort: pulumi.Int(taskSet.ServiceRegistries.ContainerPort),
-				Port:          pulumi.Int(taskSet.ServiceRegistries.Port),
-			},
+			ServiceRegistries:      serviceRegistries,
 			Tags:                   pulumi.ToStringMap(taskSet.Tags),
 			WaitUntilStable:        pulumi.Bool(taskSet.WaitUntilStable),
-			WaitUntilStableTimeout: pulumi.String(taskSet.WaitUntilStableTimeout),
+			WaitUntilStableTimeout: waitUntilStableTimeout,
 		}, pulumi.Parent(component))
 		if err != nil {
 			return nil, fmt.Errorf("failed to create new task set: %v", err)

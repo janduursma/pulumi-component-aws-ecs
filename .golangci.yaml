@@ -1,51 +1,44 @@
-linters:
-  enable:
-    - gofmt
-    - goimports
-    - gci
-  disable:
-    - gochecknoglobals
-    - goerr113
-    - gomnd
-    - gosimple
-    - scopelint
-    - exhaustivestruct
-    - nestif
-    - prealloc
-    - nakedret
-    - wsl
-    - bodyclose
-    - goconst
-    - wsl
-    - dupl
-    - funlen
-    - testpackage
-    - interfacer
-    - unparam
-    - golint
-    - godot
-    - forbidigo
-    - cyclop
-    - gocritic
-    - stylecheck
-    - varcheck
-    - maligned
-    - depguard
-    - tagliatelle
-    - unconvert
-    - wrapcheck
-    - misspell
-    - gocognit
-    - lll
-    - scopelint
-    - gosec
-
 linters-settings:
+  errcheck:
+    ignore: ''
+  goconst:
+    min-len: 3
+    min-occurrences: 3
+  revive:
+    rules:
+      - name: unexported-return
+        disabled: true
+  gocyclo:
+    min-complexity: 14
+  misspell:
+    locale: US
   staticcheck:
     checks:
       - all
-  govet:
-    enable-all: true
+
+linters:
+  enable:
+    - unused
+    - errcheck
+    - revive
+    - ineffassign
+    - misspell
+    - staticcheck
+    - unused
+    - govet
+    - gosec
+    - gocyclo
+    - gofmt
+    - goimports
+    - goconst
+    - gocritic
+    - typecheck
 
 run:
-  timeout: 5m
+  timeout: 1m
+  issues-exit-code: 1
+  tests: true
+
+output:
+  print-issued-lines: true
+  print-linter-name: true

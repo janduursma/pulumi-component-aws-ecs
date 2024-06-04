@@ -4,7 +4,7 @@
     "configuration": {
       "executeCommand": {
         "kmsKeyId": "my-kms-key-id",
-        "logging": "ENABLED"
+        "logging": "OVERRIDE"
       },
       "logConfiguration": {
         "cloudWatchEncryptionEnabled": true,
@@ -20,7 +20,6 @@
         "value": "enabled"
       }
     ],
-    "serviceConnectNamespace": "default",
     "tags": {
       "environment": "production",
       "owner": "myteam"

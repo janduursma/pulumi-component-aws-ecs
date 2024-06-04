@@ -3,10 +3,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/janduursma/pulumi-component-aws-ecs"
+	"os"
+
+	ecs "github.com/janduursma/pulumi-component-aws-ecs"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 	"go.uber.org/zap"
-	"os"
 )
 
 func main() {
@@ -25,8 +26,7 @@ func main() {
 
 	taskSetsConfig, err := getTaskSetsConfig(sugar)
 	if err != nil {
-		sugar.Error(err)
-		os.Exit(1)
+		sugar.Fatal(err)
 	}
 
 	pulumi.Run(func(ctx *pulumi.Context) error {
@@ -54,7 +54,7 @@ func getTaskSetsConfig(sugar *zap.SugaredLogger) ([]ecs.TaskSetConfig, error) {
 	}
 
 	var taskSets []ecs.TaskSetConfig
-	for _, taskSet := range tempConfig["taskSets"].([]ecs.TaskSetConfig) {
+	for _, taskSet := range tempConfig["taskSets"].([]interface{}) {
 		taskSetConfigJSON, err := json.Marshal(taskSet)
 		if err != nil {
 			sugar.Error(err)

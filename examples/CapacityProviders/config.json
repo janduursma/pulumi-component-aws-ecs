@@ -4,7 +4,7 @@
       "name": "my-capacity-provider",
       "autoscalingGroupProvider": {
         "autoscalingGroupArn": "arn:aws:autoscaling:us-west-2:123456789012:autoScalingGroup:my-auto-scaling-group",
-        "managedDraining": "enabled",
+        "managedDraining": "ENABLED",
         "managedScaling": {
           "instanceWarmupPeriod": 300,
           "maximumScalingStepSize": 10,
@@ -12,7 +12,7 @@
           "status": "ENABLED",
           "targetCapacity": 80
         },
-        "managedTerminationProtection": "enabled"
+        "managedTerminationProtection": "ENABLED"
       },
       "tags": {
         "environment": "production",

@@ -1,4 +1,4 @@
-name: Pre-Commit Checks
+name: Pre-Commit
 
 on:
   pull_request:
@@ -6,31 +6,38 @@ on:
 
 jobs:
   pre-commit-checks:
+    name: Pre-Commit
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        go: [ '1.20', '1.21', '1.22' ]
-
     steps:
-      - name: Set up Go ${{ matrix.go }}
-        uses: actions/setup-go@v5
-        with:
-          go-version: ${{ matrix.go }}
-          cache: true
-
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Cache Go Modules
-        uses: actions/cache@v4
+      - name: Set up Go ${{ matrix.go }}
+        uses: actions/setup-go@v5
         with:
-          path: ~/go/pkg/mod
-          key: "${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}"
-          restore-keys: |
-            ${{ runner.os }}-go-
+          go-version: 1.22.2
 
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v5
-        continue-on-error: true
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v6
         with:
-          version: v1.57
+          version: v1.58
+          args: --timeout=10m
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+
+      - name: Run Integration Tests
+        run: go test -coverprofile=coverage.out ./
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+          PULUMI_BACKEND_URL: ${{ secrets.PULUMI_BACKEND_URL }}
+          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
+
+      - name: Upload coverage reports to Codecov with GitHub Action
+        uses: codecov/codecov-action@v4.0.1
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
