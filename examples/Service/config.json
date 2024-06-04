@@ -1,22 +1,9 @@
 {
   "service": {
     "name": "my-ecs-service",
-    "clusterArn": "arn:aws:ecs:us-west-2:123456789012:cluster/my-cluster",
-    "taskDefinition": "my-task-definition:1",
-    "desiredCount": 2,
-    "alarms": {
-      "alarmNames": ["my-alarm-1", "my-alarm-2"],
-      "enable": true,
-      "rollback": true
-    },
-    "capacityProviderStrategies": [
-      {
-        "name": "my-capacity-provider",
-        "base": 1,
-        "weight": 2
-      }
-    ],
-    "iamRole": "arn:aws:iam::123456789012:role/ecs-service-role",
+    "clusterArn": "arn:aws:ecs:us-west-2:$ACCOUNT_ID:cluster/my-cluster",
+    "taskDefinition": "my-task-definition",
+    "desiredCount": 0,
     "deploymentCircuitBreaker": {
       "enable": true,
       "rollback": true
@@ -29,90 +16,18 @@
     "enableEcsManagedTags": true,
     "enableExecuteCommand": true,
     "forceNewDeployment": true,
-    "healthCheckGracePeriodSeconds": 60,
     "launchType": "FARGATE",
-    "loadBalancers": [
-      {
-        "containerName": "my-container",
-        "containerPort": 8080,
-        "elbName": "my-elb",
-        "targetGroupArn": "arn:aws:elasticloadbalancing:us-west-2:123456789012:targetgroup/my-target-group/1234567890123456"
-      }
-    ],
     "networkConfiguration": {
-      "subnets": ["subnet-12345678", "subnet-87654321"],
+      "subnets": ["subnet-018d8f50ed69b2301", "subnet-001eccafa60d95758"],
       "assignPublicIp": true,
-      "securityGroups": ["sg-12345678", "sg-87654321"]
+      "securityGroups": ["sg-05b0afb82b145e891"]
     },
-    "orderedPlacementStrategies": [
-      {
-        "type": "binpack",
-        "field": "memory"
-      }
-    ],
-    "placementConstraints": [
-      {
-        "type": "memberOf",
-        "expression": "attribute:ecs.availability-zone == us-west-2a"
-      }
-    ],
     "platformVersion": "1.4.0",
     "propagateTags": "SERVICE",
     "schedulingStrategy": "REPLICA",
-    "serviceConnectConfiguration": {
-      "enabled": true,
-      "logConfiguration": {
-        "logDriver": "awslogs",
-        "options": {
-          "awslogs-group": "/ecs/my-ecs-service",
-          "awslogs-region": "us-west-2",
-          "awslogs-stream-prefix": "ecs"
-        },
-        "secretOptions": [
-          {
-            "name": "my-secret",
-            "valueFrom": "arn:aws:ssm:us-west-2:123456789012:parameter/my-param"
-          }
-        ]
-      },
-      "namespace": "com.amazonaws.connect",
-      "services": [
-        {
-          "portName": "my-port",
-          "clientAlias": [
-            {
-              "port": 1234,
-              "dnsName": "my-dns-name"
-            }
-          ],
-          "discoveryName": "my-discovery-name",
-          "ingressPortOverride": 8080,
-          "timeout": {
-            "idleTimeoutSeconds": 30,
-            "perRequestTimeoutSeconds": 10
-          },
-          "tls": {
-            "issuerCertAuthority": {
-              "awsPcaAuthorityArn": "arn:aws:acm-pca:us-west-2:123456789012:certificate-authority/abcdefg-1234-5678-abcd-1234567890ab"
-            },
-            "kmsKey": "arn:aws:kms:us-west-2:123456789012:key/abcdef01-1234-5678-abcd-1234567890ab",
-            "roleArn": "arn:aws:iam::123456789012:role/ecs-service-role"
-          }
-        }
-      ]
-    },
-    "serviceRegistry": {
-      "containerName": "my-container",
-      "containerPort": 8080,
-      "port": 8080,
-      "registryArn": "arn:aws:servicediscovery:us-west-2:123456789012:service/srv-my-service/1234567890123456"
-    },
     "tags": {
       "Environment": "Production",
       "Team": "DevOps"
-    },
-    "triggers": {
-      "my-trigger": "trigger-details"
     },
     "waitForSteadyState": true
   }

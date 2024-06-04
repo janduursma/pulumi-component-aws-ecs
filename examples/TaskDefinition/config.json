@@ -16,34 +16,14 @@
     "networkMode": "awsvpc",
     "cpu": "256",
     "ephemeralStorage": 30,
-    "executionRoleArn": "arn:aws:iam::123456789012:role/my-execution-role",
-    "ipcMode": "host",
-    "inferenceAccelerators": [
-      {
-        "deviceName": "device1",
-        "deviceType": "eia1.medium"
-      }
-    ],
+    "executionRoleArn": "arn:aws:iam::$ACCOUNT_ID:role/aws-service-role/ecs.amazonaws.com/AWSServiceRoleForECS",
     "memory": "512",
     "pidMode": "task",
-    "placementConstraints": [
-      {
-        "expression": "attribute:ecs.availability-zone == us-west-2a",
-        "type": "memberOf"
-      }
-    ],
-    "proxyConfiguration": {
-      "containerName": "my-container",
-      "properties": {
-        "ProxyConfigurationProperty": "value"
-      },
-      "type": "APPMESH"
-    },
     "requiresCompatibilities": [
       "FARGATE"
     ],
     "runtimePlatform": {
-      "cpuArchitecture": "x86_64",
+      "cpuArchitecture": "X86_64",
       "operatingSystemFamily": "LINUX"
     },
     "skipDestroy": false,
@@ -51,34 +31,7 @@
       "environment": "production",
       "owner": "myteam"
     },
-    "taskRoleArn": "arn:aws:iam::123456789012:role/my-task-role",
-    "trackLatest": true,
-    "volumes": [
-      {
-        "name": "my-volume",
-        "dockerVolumeConfiguration": {
-          "autoprovision": true,
-          "driver": "local",
-          "driverOpts": {
-            "key": "value"
-          },
-          "labels": {
-            "key": "value"
-          },
-          "scope": "task"
-        },
-        "efsVolumeConfiguration": {
-          "fileSystemId": "fs-12345678",
-          "authorizationConfig": {
-            "accessPointId": "fsap-12345678",
-            "iam": "ENABLED"
-          },
-          "rootDirectory": "/",
-          "transitEncryption": "ENABLED",
-          "transitEncryptionPort": 22
-        },
-        "hostPath": "/path/on/host"
-      }
-    ]
+    "taskRoleArn": "arn:aws:iam::$ACCOUNT_ID:role/aws-service-role/ecs.amazonaws.com/AWSServiceRoleForECS",
+    "trackLatest": true
   }
 }

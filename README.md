@@ -1,6 +1,7 @@
 # Pulumi Component AWS ECS
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![codecov](https://codecov.io/github/janduursma/pulumi-component-aws-ecs/graph/badge.svg?token=JJAWGLEN7Z)](https://codecov.io/github/janduursma/pulumi-component-aws-ecs)
 
 ## Overview
 
@@ -53,6 +54,9 @@ func main() {
 	}
 }
 ```
+
+## Documentation
+The Go documentation for this project has been automatically generated using Doc2Go and is hosted on my personal domain. You can visit it [here](http://pulumi-component-aws-ecs.janduursma.com).
 
 ## Additional Resources
 
