@@ -4,7 +4,7 @@ go 1.22
 
 require (
 	github.com/pulumi/pulumi-aws/sdk/v6 v6.38.0
-	github.com/pulumi/pulumi/sdk/v3 v3.116.1
+	github.com/pulumi/pulumi/sdk/v3 v3.118.0
 	github.com/stretchr/testify v1.9.0
 	go.uber.org/zap v1.27.0
 )
