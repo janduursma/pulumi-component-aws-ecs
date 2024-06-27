@@ -4,14 +4,14 @@
     "configuration": {
       "executeCommand": {
         "kmsKeyId": "my-kms-key-id",
+        "logConfiguration": {
+          "cloudWatchEncryptionEnabled": true,
+          "cloudWatchLogGroupName": "/ecs/my-cluster-logs",
+          "s3BucketEncryptionEnabled": true,
+          "s3BucketName": "my-s3-bucket",
+          "s3KeyPrefix": "logs/"
+        },
         "logging": "OVERRIDE"
-      },
-      "logConfiguration": {
-        "cloudWatchEncryptionEnabled": true,
-        "cloudWatchLogGroupName": "/ecs/my-cluster-logs",
-        "s3BucketEncryptionEnabled": true,
-        "s3BucketName": "my-s3-bucket",
-        "s3KeyPrefix": "logs/"
       }
     },
     "settings": [

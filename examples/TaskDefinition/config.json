@@ -15,7 +15,9 @@
     ],
     "networkMode": "awsvpc",
     "cpu": "256",
-    "ephemeralStorage": 30,
+    "ephemeralStorage": {
+      "sizeInGb": 30
+    },
     "executionRoleArn": "arn:aws:iam::$ACCOUNT_ID:role/aws-service-role/ecs.amazonaws.com/AWSServiceRoleForECS",
     "memory": "512",
     "pidMode": "task",
