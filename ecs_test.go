@@ -571,8 +571,11 @@ func TestNewTaskDefinition(t *testing.T) {
 	stack, err := auto.UpsertStackInlineSource(ctx, stackName, projectName, func(ctx *pulumi.Context) error {
 		current, err := aws.GetCallerIdentity(ctx, nil, nil)
 		assert.NoError(t, err)
-		taskDefinitionConfig.ExecutionRoleArn = strings.Replace(taskDefinitionConfig.ExecutionRoleArn, "$ACCOUNT_ID", current.AccountId, 1)
-		taskDefinitionConfig.TaskRoleArn = strings.Replace(taskDefinitionConfig.TaskRoleArn, "$ACCOUNT_ID", current.AccountId, 1)
+		executionRoleArn := strings.Replace(*taskDefinitionConfig.ExecutionRoleArn, "$ACCOUNT_ID", current.AccountId, 1)
+		taskDefinitionConfig.ExecutionRoleArn = &executionRoleArn
+
+		taskDefinitionRoleArn := strings.Replace(*taskDefinitionConfig.TaskRoleArn, "$ACCOUNT_ID", current.AccountId, 1)
+		taskDefinitionConfig.TaskRoleArn = &taskDefinitionRoleArn
 
 		_, err = NewTaskDefinition(ctx, *taskDefinitionConfig)
 		if err != nil {
